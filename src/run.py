@@ -1,23 +1,23 @@
 # -*- coding: utf-8 -*-
-import webdriver as wd
-from connection_db import select_personas
+from videoads_crawler.webdriver import Webdriver
+from videoads_database.connection_db import select_personas
 from platform import node
 
 
 def main():
-    machine_name = node()
-    #machine_name = "brazil00"
+    #machine_name = node()
+    machine_name = "uk01"
 
-    #  Retorna uma tabela (pandas) com as personas que v�o rodar nesta m�quina #
+    #  Returns a pandas table with the personas that will be executed #
     personas = select_personas(machine_name)
     bots = []
 
-    for index, persona in personas.iterrows():
-        bot = wd.Webdriver(persona, machine_name)
+    for _, persona in personas.iterrows():
+        bot = Webdriver(persona, machine_name)
         bot.start()
         bots.append(bot)
 
-    # Espera todas as threads terminarem
+    # Wait all the threads to finish
     for bot in bots:
         bot.join()
 

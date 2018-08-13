@@ -28,5 +28,5 @@ def select_personas(machine_name):
         cnx.close()
         return personas
     except:
-        print("There are no users for this machine and they are not registered.")
+        print("Machine name invalid")
         sys.exit()
