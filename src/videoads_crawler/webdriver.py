@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 import os
+import re
+import sys
 import pickle
 import pandas as pd
 import threading
-import sys
-import urllib.request, json
 from datetime import datetime
-from time import sleep, time,mktime
+from time import sleep, time
 from selenium import webdriver
 from random import uniform
 from pyvirtualdisplay import Display
@@ -174,6 +174,27 @@ class Webdriver(threading.Thread):
         except:
             print("Erro loading playlist: " + self.name)
             self.quit()
+
+
+    # Only works if the user is logged in
+    def get_subscribed_playlist(self):
+        self.driver.get('https://www.youtube.com/feed/subscriptions')
+        html_source = self.driver.page_source
+        
+        # TODO: It is possible that the page can be loaded in portuguese. Check language before parsing
+        try:
+            a = re.compile('{"simpleText":"Today"}(.*){"simpleText":"Yesterday"}')
+            today_html = a.search(html_source)
+
+            b = re.compile('{"videoId":"(.+?)"')
+            playlist = b.findall(today_html.group(1))
+
+            playlist = list(set(playlist))
+        except:
+            print("Could not build playlist")
+            self.quit()
+
+        return playlist
 
 
     # Start youtube browsing
