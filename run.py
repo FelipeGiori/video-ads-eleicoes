@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-from webdriver import Webdriver
-from connection_db import select_personas
+from videoads_crawler.webdriver import Webdriver
+from videoads_database.connection_db import select_personas
 from platform import node
 
 

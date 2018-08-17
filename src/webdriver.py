@@ -11,8 +11,8 @@ from time import sleep, time
 from selenium import webdriver
 from random import uniform
 from pyvirtualdisplay import Display
-from videoads_database.connection_db import connect_db
-from videoads_log.log import send2db, create_log
+from connection_db import connect_db
+from log import send2db, create_log
 
 
 TRAIN = 1
@@ -69,24 +69,10 @@ class Webdriver(threading.Thread):
             print('Erro ao inicializar o Firefox. Abortando Thread...')
             sys.exit()
         
-        self.start_log_capture(driver)
         driver.get('https://www.youtube.com/')
         self.check_folder_exists()
         self.load_cookies(driver)
-        return driver
-    
-    
-    # Record HTTP requests made via firefox
-    def start_log_capture(self, driver):
-        driver.get('about:networking')
-        driver.find_element_by_id('confpref').click()
-        driver.find_element_by_css_selector('div.category:nth-child(7)').click()
-        driver.find_element_by_id('log-file').clear()
-        driver.find_element_by_id('log-file').send_keys('personas/' + self.name + '/' + 'firefox-log_' + self.name)
-        driver.find_element_by_id('log-modules').clear()
-        driver.find_element_by_id('log-modules').send_keys('timestamp,nsHttp:5')
-        driver.find_element_by_id('start-logging-button').click()
-    
+        return driver    
     
     # Check if the necessary folders exist
     def check_folder_exists(self):
