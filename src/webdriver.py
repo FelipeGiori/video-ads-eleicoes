@@ -12,7 +12,7 @@ from selenium import webdriver
 from random import uniform
 from pyvirtualdisplay import Display
 from connection_db import connect_db
-from log import send2db, create_log
+from log import send2db, create_log, start_log_capture
 
 
 TRAIN = 1
