@@ -69,7 +69,7 @@ class Webdriver(threading.Thread):
             print('Erro ao inicializar o Firefox. Abortando Thread...')
             sys.exit()
 
-        Webdriver.start_log_capture(self, driver)
+        start_log_capture(self, driver)
         driver.get('https://www.youtube.com/')
         self.check_folder_exists()
         self.load_cookies(driver)
