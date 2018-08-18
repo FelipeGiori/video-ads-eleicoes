@@ -59,6 +59,16 @@ def utc2local(utc_time):
     offset = datetime.fromtimestamp(epoch)-datetime.utcfromtimestamp(epoch)
     return utc_time + offset
 
+def start_log_capture(self, driver):
+        driver.get('about:networking')
+        driver.find_element_by_id('confpref').click()
+        driver.find_element_by_css_selector('div.category:nth-child(7)').click()
+        driver.find_element_by_id('log-file').clear()
+        driver.find_element_by_id('log-file').send_keys('/dev/stdout')
+        driver.find_element_by_id('log-modules').clear()
+        driver.find_element_by_id('log-modules').send_keys('nsHttp:5')
+        driver.find_element_by_id('start-logging-button').click()
+
 
 def create_log(_id, name):
     # Constants
