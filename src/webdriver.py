@@ -37,7 +37,7 @@ class Webdriver(threading.Thread):
         self.session_time = persona['session_time'] # em horas
         self.theme = persona['theme']
         self.machine_name = machine_name
-        self.display = Display(visible = True, size=(800, 600)).start()
+        self.display = Display(visible = True, size=(800, 600),backend = 'xvfb').start()
         self.driver = self.setup_driver()
     
     
