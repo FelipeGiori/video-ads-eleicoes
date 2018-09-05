@@ -168,20 +168,24 @@ class Webdriver(threading.Thread):
         self.driver.get('https://www.youtube.com/feed/subscriptions')
         html_source = self.driver.page_source
         
-        # TODO: It is possible that the page can be loaded in portuguese. Check language before parsing
         try:
             a = re.compile('{"simpleText":"Today"}(.*){"simpleText":"Yesterday"}')
             today_html = a.search(html_source)
-
-            b = re.compile('{"videoId":"(.+?)"')
-            playlist = b.findall(today_html.group(1))
-
-            playlist = list(set(playlist))
+        
+            if(today_html == None):
+                a = re.compile('{"simpleText":"Hoje"}(.*){"simpleText":"Ontem"}')
+                today_html = a.search(html_source)
+                b = re.compile('{"videoId":"(.+?)"')
+                playlist = b.findall(today_html.group(1))
+            else:    
+                b = re.compile('{"videoId":"(.+?)"')
+                playlist = b.findall(today_html.group(1))
+                playlist = list(set(playlist))
         except:
             print("Could not build playlist")
             self.quit()
-
-        return playlist
+        
+        return list(set(playlist))
 
 
     # Start youtube browsing
