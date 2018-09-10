@@ -2,14 +2,11 @@
 import os
 import re
 import json
-import shutil
-import fnmatch
 import urllib.request
+import subprocess
 from datetime import datetime
 from time import mktime
-from connection_db import connect_db
-import peewee
-from model import Event
+from database_model import Event
 
 def send2db(accounts_id, time, content_id, ad_id, event_type):
         # Get both jsons only when there's a pairing
@@ -19,17 +16,11 @@ def send2db(accounts_id, time, content_id, ad_id, event_type):
         else:
             ad_data = '{"hello": null}'
             content_data = '{"hello": null}'
-         
-        event = {'user_id': accounts_id,
-                 'time': time,
-                 'content_id': content_id,
-                 'ad_id': ad_id, 
-                 'event_type': event_type,
-                 'content_data': content_data,
-                 'ad_data': ad_data}
-        
-        # Insert new event
-        return Event.create(event)
+                
+        # Insert new event 
+        Event.insert(persona=accounts_id,time= time,content_id=content_id,
+                     ad_id= ad_id, event_type= event_type,
+                     content_data= content_data,ad_data= ad_data)
 
 
 def return_json(video_id):
@@ -42,25 +33,38 @@ def return_json(video_id):
             return json.dumps(data)
 
 
-def find_log_file(pattern, path):
-    result = []
-    for root, _, files in os.walk(path):
-        for name in files:
-            if fnmatch.fnmatch(name, pattern):
-                result.append(os.path.join(root, name))
-    return result
-
 def utc2local(utc_time):
     epoch = mktime(utc_time.timetuple())
     offset = datetime.fromtimestamp(epoch)-datetime.utcfromtimestamp(epoch)
     return utc_time + offset
 
-def start_log_capture(self, driver):
-        driver.get('about:networking')
-        driver.find_element_by_id('confpref').click()
-        driver.find_element_by_css_selector('div.category:nth-child(7)').click()
-        driver.find_element_by_id('log-file').clear()
-        driver.find_element_by_id('log-file').send_keys('/dev/stdout')
-        driver.find_element_by_id('log-modules').clear()
-        driver.find_element_by_id('log-modules').send_keys('nsHttp:5')
-        driver.find_element_by_id('start-logging-button').click()
+
+def parse_log():
+    cmd = "grep -E ptracking ../geckodriver.log | grep content_v > ../tmp.log"
+    subprocess.check_output(cmd, shell=True)
+    
+    pairs = pd.DataFrame(columns=['time', 'content_id', 'ad_id'])
+    request = open("../tmp.log", "r")
+    
+    # HTTPS request pair info parsing
+    time_re = re.compile('(.+?)\.')
+    ad_re = re.compile('&video_id=(.+?)&cpn')
+    content_re = re.compile('&content_v=(...........)')
+    
+    # Search for flag content and append data to dataframe
+    for line in request:
+        req_time = time_re.search(line)
+        ad_id = ad_re.search(line)
+        content_id = content_re.search(line)
+        pairs = pairs.append({'time': req_time.group(1), 
+                              'content_id': content_id.group(1), 
+                              'ad_id': ad_id.group(1)}, ignore_index=True)
+        
+    # Drop duplicate values because of many requests
+    pairs = pairs.drop_duplicates()
+    pairs.reset_index(inplace=True, drop=True)
+    print(pairs)
+    
+    # Delete files
+    os.remove("../tmp.log")
+    os.remove("../geckodriver.log")

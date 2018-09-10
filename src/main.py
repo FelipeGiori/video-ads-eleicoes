@@ -1,25 +1,38 @@
 # -*- coding: utf-8 -*-
 from webdriver import Webdriver
-import peewee
-from model import Persona
-import sys
+from requests import get
+from database_model import create_db, Persona
+from log import parse_log
 
+def check_database():
+    create_db()
+
+def get_public_ip():
+    return get('https://ipapi.co/ip/').text
 
 def main():
-    #ip = sys.argv[1]
-    ip = '150.164.201.77'
+    ip = get_public_ip()
     
-    personas = Persona.select().where(Persona.source_ip is ip)
+    check_database()
+    
+    personas = Persona.select().where(Persona.source_ip == ip)
     bots = []
+    
+    for persona in personas:
+        print(persona.name)
 
-    for persona in Personas:
-        bot = Webdriver(persona, machine_name)
+    for persona in personas:
+        print("Creating bot")
+        bot = Webdriver(persona)
         bot.start()
         bots.append(bot)
+        print("Created bot")
 
     # Wait all the threads to finish
     for bot in bots:
         bot.join()
+        
+    #parse_log()
 
     print('Program finished successfully')
 

@@ -14,31 +14,31 @@ class Persona(BaseModel):
     password = CharField()
     birthday = DateTimeField()
     gender = CharField()
-    phone = CharField()
+    phone = CharField(null=True)
+    political_wing = CharField()
     source_ip = CharField()
-    session_time = IntField()
+    session_time = IntegerField()
 
-
-def event_defaults():
-    return {"hello": None}
 
 class Event(BaseModel):
-    persona = ForeignKeyField(Persona)
+    persona = IntegerField(null=True)
     time = DateTimeField()
     content_id = TextField()
-    ad_id = TextField()
+    ad_id = TextField(null=True)
     event_type = TextField()
-    content_data = CharField(default=event_defaults)
-    ad_data = CharField(default=house_defaults)
+    content_data = CharField(null=True)
+    ad_data = CharField(null=True)
     
     
 def create_db():
     try:
-        Persona.create_table()
-    except peewee.OperationalError:
+        persona = Persona(BaseModel)
+        persona.create_table()
+    except:
         print ('Tabela Persona ja existe!')
         
     try:
-        Event.create_table()
-    except peewee.OperationalError:
+        event = Event(BaseModel)
+        event.create_table()
+    except:
         print ('Tabela Event ja existe!')

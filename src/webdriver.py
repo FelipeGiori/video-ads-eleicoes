@@ -4,23 +4,17 @@ import os
 import re
 import sys
 import pickle
-import pandas as pd
 import threading
 from datetime import datetime
 from time import sleep, time
 from selenium import webdriver
 from random import uniform
 from pyvirtualdisplay import Display
-from connection_db import connect_db
-from log import send2db, start_log_capture
-
-
-TRAIN = 1
-TEST = 0
+from log import send2db
 
 
 class Webdriver(threading.Thread):    
-    def __init__ (self, persona, machine_name):
+    def __init__ (self, persona):
         threading.Thread.__init__(self)
         
         # Persona info setup
@@ -28,10 +22,15 @@ class Webdriver(threading.Thread):
         self.name = persona.name
         self.password = persona.password
         self.session_time = persona.session_time # em horas
-        self.display = Display(visible = True, size=(800, 600),backend = 'xvfb').start()
+        self.skip_topic = 0
+        self.skip_offtopic = 0
+        self.p_train = 1
+        #self.display = Display(visible = True, size=(800, 600)).start()
+        #self.display = Display(visible = False, size=(800, 600), backend='xvfb').start()
         self.driver = self.setup_driver()
     
     def run(self):
+        print("Run")
         self.login_youtube()
         topic_urls = self.get_subscribed_playlist()
         offtopic_urls = self.get_subscribed_playlist()
@@ -44,21 +43,12 @@ class Webdriver(threading.Thread):
     def setup_driver(self):
         profile = webdriver.FirefoxProfile()
         
-        if(self.use_proxy):
-            proxy = ""
-            ip, port = proxy.split(':')
-            profile.set_preference("network.proxy.type", 1)
-            profile.set_preference("network.proxy.http", ip)
-            profile.set_preference("network.proxy.http_port", int(port))
-            profile.update_preferences()
-        
         try:
             driver = webdriver.Firefox(firefox_profile = profile)
         except:
             print('Erro ao inicializar o Firefox. Abortando Thread...')
             sys.exit()
 
-        start_log_capture(self, driver)
         driver.get('https://www.youtube.com/')
         self.check_folder_exists()
         self.load_cookies(driver)
@@ -74,9 +64,6 @@ class Webdriver(threading.Thread):
         if not(os.path.isdir(directory)):
             os.makedirs(directory)
     
-    def get_public_ip():
-        # TO DO
-        return '150.164.201.77'
         
     def load_cookies(self, driver):
         path_file = 'personas/' + self.name + '/' + self.name + '.pkl'
@@ -95,6 +82,8 @@ class Webdriver(threading.Thread):
         self.driver.find_element_by_name('password').send_keys(self.password)
         self.driver.find_element_by_id('passwordNext').click()
         sleep(5)
+        
+        # TODO: Change login auth
         logged_in_url = "https://myaccount.google.com/?pli=1"
         if(self.driver.current_url == logged_in_url):
             self.driver.get('https://youtube.com')
@@ -106,6 +95,7 @@ class Webdriver(threading.Thread):
     # Only works if the user is logged in
     def get_subscribed_playlist(self):
         self.driver.get('https://www.youtube.com/feed/subscriptions')
+        sleep(1)
         html_source = self.driver.page_source
         
         try:
@@ -145,18 +135,18 @@ class Webdriver(threading.Thread):
             # um vídeo da lista de treino será visto. Caso contrário, um vídeo da lista
             # de teste será visto.
             if(uniform(0, 1) <= self.p_train and i < len(topic_urls)):
-                self.watch(topic_urls.content_id[i], self.skip_topic, TRAIN)
+                self.watch(topic_urls[i], self.skip_topic)
                 i += 1
                     
             elif(j < len(offtopic_urls)):
-                self.watch(offtopic_urls.content_id[j], self.skip_offtopic, TEST)
+                self.watch(offtopic_urls[j], self.skip_offtopic)
                 j += 1
         
     
-    def watch(self, video_id, skip, is_train):
+    def watch(self, video_id, skip):
         start_time = str(datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"))
-        send2db(self.id, start_time, video_id, '', is_train, 'STARTED WATCHING VCONTENT')
-        print("{},{},{},{},{},{}".format(self.name, start_time, video_id, '', is_train, 'STARTED WATCHING VCONTENT'))
+        send2db(self.id, start_time, video_id, '', 'STARTED WATCHING VCONTENT')
+        print("{},{},{},{},{}".format(self.name, start_time, video_id, '', 'STARTED WATCHING VCONTENT'))
         
         video_url = "https://www.youtube.com/watch?v=" + video_id
         self.driver.get(video_url)
@@ -167,8 +157,8 @@ class Webdriver(threading.Thread):
         # If skip is False, watch the whole video-ad
         if(self.player_status() == -1):
             time_start = str(datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"))
-            send2db(self.id, time_start, video_id, '', is_train, 'STARTED WATCHING AD')            
-            print("{},{},{},{},{},{}".format(self.name, time_start, video_id, '', is_train, 'STARTED WATCHING AD'))
+            send2db(self.id, time_start, video_id, '', 'STARTED WATCHING AD')            
+            print("{},{},{},{},{}".format(self.name, time_start, video_id, '', 'STARTED WATCHING AD'))
             self.watching_ad(skip, video_id)
 
         # Check if the video streaming has finished
@@ -178,14 +168,14 @@ class Webdriver(threading.Thread):
                 try:
                     self.driver.find_element_by_css_selector('.videoAdUiSkipButton').click()
                     time_now = str(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-                    send2db(self.id, time_start, video_id, '', is_train, 'AD SKIPPED MID VCONTENT')
-                    print("{},{},{},{},{},{}".format(self.name, time_now, video_id, '', is_train, 'AD SKIPPED MID VCONTENT'))
+                    send2db(self.id, time_start, video_id, '', 'AD SKIPPED MID VCONTENT')
+                    print("{},{},{},{},{}".format(self.name, time_now, video_id, '', 'AD SKIPPED MID VCONTENT'))
                 except:
                     pass
         
         end_time = str(datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"))
-        send2db(self.id, end_time, video_id, '', is_train, 'FINISHED WATCHING VCONTENT')
-        print("{},{},{},{},{},{}".format(self.name, end_time, video_id, '', is_train, 'FINISHED WATCHING VCONTENT'))
+        send2db(self.id, end_time, video_id, '', 'FINISHED WATCHING VCONTENT')
+        print("{},{},{},{},{}".format(self.name, end_time, video_id, '', 'FINISHED WATCHING VCONTENT'))
                 
     
     # Returns the video player current state
@@ -213,8 +203,8 @@ class Webdriver(threading.Thread):
             while(self.player_status() == -1 and self.driver.current_url.find('watch?v=')):
                 sleep(1)   
             time_now = str(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-            send2db(self.id, time_now, video_id, '', '', 'FINISHED WATCHING AD')
-            print("{},{},{},{},{},{}".format(self.name, time_now, video_id, '', '', 'FINISHED WATCHING AD'))
+            send2db(self.id, time_now, video_id, '', 'FINISHED WATCHING AD')
+            print("{},{},{},{},{}".format(self.name, time_now, video_id, '', 'FINISHED WATCHING AD'))
 
 
     def skip_ad(self, video_id):
@@ -222,8 +212,8 @@ class Webdriver(threading.Thread):
             try:
                 self.driver.find_element_by_css_selector('.videoAdUiSkipButton').click()
                 time_now = str(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-                send2db(self.id, time_now, video_id, '', '', 'AD SKIPPED')
-                return print("{},{},{},{},{},{}".format(self.name, time_now, video_id, '', '', 'AD SKIPPED'))
+                send2db(self.id, time_now, video_id, '', 'AD SKIPPED')
+                return print("{},{},{},{},{}".format(self.name, time_now, video_id, '', 'AD SKIPPED'))
             except Exception as _:
                 sleep(1)
     
