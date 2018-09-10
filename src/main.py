@@ -1,18 +1,18 @@
 # -*- coding: utf-8 -*-
 from webdriver import Webdriver
-from connection_db import select_personas
-from platform import node
+import peewee
+from model import Persona
+import sys
 
 
 def main():
-    #machine_name = node()
-    machine_name = "uk01"
-
-    #  Returns a pandas table with the personas that will be executed #
-    personas = select_personas(machine_name)
+    #ip = sys.argv[1]
+    ip = '150.164.201.77'
+    
+    personas = Persona.select().where(Persona.source_ip is ip)
     bots = []
 
-    for _, persona in personas.iterrows():
+    for persona in Personas:
         bot = Webdriver(persona, machine_name)
         bot.start()
         bots.append(bot)

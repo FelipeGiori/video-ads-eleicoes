@@ -8,11 +8,10 @@ import urllib.request
 from datetime import datetime
 from time import mktime
 from connection_db import connect_db
+import peewee
+from model import Event
 
-def send2db(accounts_id, time, content_id, ad_id, is_train, event_type):
-        cnx = connect_db()
-        cursor = cnx.cursor()
-
+def send2db(accounts_id, time, content_id, ad_id, event_type):
         # Get both jsons only when there's a pairing
         if(ad_id != ''):
             ad_data = return_json(ad_id)
@@ -20,20 +19,17 @@ def send2db(accounts_id, time, content_id, ad_id, is_train, event_type):
         else:
             ad_data = '{"hello": null}'
             content_data = '{"hello": null}'
-            
-        add_event = ("INSERT INTO event  "
-                    "(id,accounts_id,time, content_id, ad_id, is_train, event_type, content_data, ad_data) "
-                    "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)")
+         
+        event = {'user_id': accounts_id,
+                 'time': time,
+                 'content_id': content_id,
+                 'ad_id': ad_id, 
+                 'event_type': event_type,
+                 'content_data': content_data,
+                 'ad_data': ad_data}
         
-        data_event = ('NULL', accounts_id, time, content_id, ad_id, is_train, event_type, content_data, ad_data)
-
         # Insert new event
-        cursor.execute(add_event, data_event)
-
-        # Check if the data has been sent
-        cnx.commit()
-        cursor.close()
-        cnx.close()
+        return Event.create(event)
 
 
 def return_json(video_id):
@@ -68,47 +64,3 @@ def start_log_capture(self, driver):
         driver.find_element_by_id('log-modules').clear()
         driver.find_element_by_id('log-modules').send_keys('nsHttp:5')
         driver.find_element_by_id('start-logging-button').click()
-
-
-def create_log(_id, name):
-    # Constants
-    AD_FLAG = 'video_id='
-    CONTENT_FLAG = 'content_v='
-    LOG_DIRECTORY = 'personas/' + name + "/"
-        
-    # log files created by firefox   
-    logfile_child = find_log_file('firefox-log_' + name + '-child.*', LOG_DIRECTORY)
-    logfile_full = find_log_file('firefox-log_' + name + '-main.*', LOG_DIRECTORY)
-        
-    # log file path used in grep
-    parsed_log = LOG_DIRECTORY + name + '.txt'
-    
-    # Filters the requests containing 'ptracking' and 'content_v'
-    os.system(" grep -E ptracking " + logfile_child[0] + ' > ' + parsed_log)
-
-    with open(parsed_log, "r") as myfile:
-        line = myfile.readline()
-        count = 1 
-        while line:
-            content_id = re.findall(CONTENT_FLAG + '[^]\n]*', line)
-            content_id = next(iter(content_id or []),'')
-            ad_id = re.findall(AD_FLAG + '[^&\n]*', line)
-            ad_id = next(iter(ad_id or []),'')
-            log_time = datetime.strptime(line[:26], '%Y-%m-%d %H:%M:%S.%f')
-            log_time = utc2local(log_time) # convert to local date_time
-            content_id = content_id.split('=', 1)[-1]
-            ad_id = ad_id.split('=', 1)[-1]
-                
-            send2db(_id, log_time, content_id, ad_id, '', '')
-            print("{},{},{},{},{},{}".format(name, log_time, content_id, ad_id,'',''))
-                    
-            line = myfile.readline()
-            count += 1
-
-    #print('Removing LOG FULL ...')
-    os.remove(logfile_full[0])
-        
-    #print('Renaming LOG Files ...')
-    DATESTRING = datetime.strftime(datetime.now(), '%Y-%m-%d-%H-%M-%S') #DATA E HORA
-    shutil.move(logfile_child[0], 'personas/' + name + '/' + name + DATESTRING + '-CHILD'+ '.txt')
-    shutil.move(parsed_log, 'personas/'+ name + '/' + name + DATESTRING + '-PARSED'+ '.txt')

@@ -12,7 +12,7 @@ from selenium import webdriver
 from random import uniform
 from pyvirtualdisplay import Display
 from connection_db import connect_db
-from log import send2db, create_log, start_log_capture
+from log import send2db, start_log_capture
 
 
 TRAIN = 1
@@ -24,31 +24,20 @@ class Webdriver(threading.Thread):
         threading.Thread.__init__(self)
         
         # Persona info setup
-        self.id = persona['id']
-        self.machine_id = persona['machine_id']
-        self.name = persona['name']
-        self.password = str(persona['password'])
-        self.age = persona['age']
-        self.gender = persona['gender']
-        self.p_train = persona['p_train']
-        self.skip_topic = persona['skip_topic']
-        self.skip_offtopic = persona['skip_offtopic']
-        self.use_proxy = persona['use_proxy']
-        self.session_time = persona['session_time'] # em horas
-        self.theme = persona['theme']
-        self.machine_name = machine_name
+        self.id = persona.id
+        self.name = persona.name
+        self.password = persona.password
+        self.session_time = persona.session_time # em horas
         self.display = Display(visible = True, size=(800, 600),backend = 'xvfb').start()
         self.driver = self.setup_driver()
     
-    
     def run(self):
-        #topic_urls, offtopic_urls = self.get_playlist(self)
-        topic_urls, offtopic_urls = self.get_playlist_random()
         self.login_youtube()
+        topic_urls = self.get_subscribed_playlist()
+        offtopic_urls = self.get_subscribed_playlist()
         self.browse(topic_urls, offtopic_urls)
         self.save_cookies()
         self.quit()
-        #create_log(self.id, self.name)
 
 
     # Browser init
@@ -85,7 +74,10 @@ class Webdriver(threading.Thread):
         if not(os.path.isdir(directory)):
             os.makedirs(directory)
     
-    
+    def get_public_ip():
+        # TO DO
+        return '150.164.201.77'
+        
     def load_cookies(self, driver):
         path_file = 'personas/' + self.name + '/' + self.name + '.pkl'
         if(os.path.isfile(path_file)):
@@ -110,58 +102,6 @@ class Webdriver(threading.Thread):
         else:
             print("Could not log in")
             return False
-    
-        
-    def get_playlist(self):
-        cnx = connect_db()
-        country = ''.join(filter(str.isalpha, self.machine_name))
-        
-        try:
-            playlist_topic = pd.read_sql("SELECT content_id "
-                                         "FROM ad.playlist "
-                                         "WHERE ad.playlist.country = '%s' AND ad.playlist.content_id NOT IN"
-                                         "(SELECT content_id "
-                                         "FROM ad.event "
-                                         "WHERE ad.event.accounts_id = %d);" %(country, self.id), con = cnx)
-            
-            playlist_offtopic = pd.read_sql("SELECT content_id "
-                                            "FROM ad.playlist "
-                                            "WHERE ad.playlist.country = 'all' AND ad.playlist.content_id NOT IN"
-                                            "(SELECT content_id "
-                                            "FROM ad.event "
-                                            "WHERE ad.event.accounts_id = %d);" %(self.id), con = cnx)
-            cnx.close()
-            return playlist_topic, playlist_offtopic
-        except:
-            print("Erro loading playlist: " + self.name)
-            self.quit()
-    
-
-    def get_playlist_random(self):
-        cnx = connect_db()
-        country = ''.join(filter(str.isalpha, self.machine_name))
-
-        try:
-            playlist_topic = pd.read_sql(
-                "SELECT content_id "
-                "FROM ad.playlist "
-                "WHERE ad.playlist.country = '%s';" %(country), con = cnx)
-
-            playlist_offtopic = pd.read_sql(
-                "SELECT content_id "
-                "FROM ad.playlist "
-                "WHERE ad.playlist.country = 'all';", con = cnx)
-            
-            cnx.close()
-
-            # Shuffles the playlists
-            playlist_topic = playlist_topic.sample(frac = 1).reset_index(drop = True)
-            playlist_offtopic = playlist_offtopic.sample(frac = 1).reset_index(drop = True)
-            return playlist_topic, playlist_offtopic
-        except:
-            print("Erro loading playlist: " + self.name)
-            self.quit()
-
 
     # Only works if the user is logged in
     def get_subscribed_playlist(self):
@@ -215,7 +155,7 @@ class Webdriver(threading.Thread):
     
     def watch(self, video_id, skip, is_train):
         start_time = str(datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"))
-        #send2db(self.id, start_time, video_id, '', is_train, 'STARTED WATCHING VCONTENT')
+        send2db(self.id, start_time, video_id, '', is_train, 'STARTED WATCHING VCONTENT')
         print("{},{},{},{},{},{}".format(self.name, start_time, video_id, '', is_train, 'STARTED WATCHING VCONTENT'))
         
         video_url = "https://www.youtube.com/watch?v=" + video_id
@@ -227,7 +167,7 @@ class Webdriver(threading.Thread):
         # If skip is False, watch the whole video-ad
         if(self.player_status() == -1):
             time_start = str(datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"))
-            #send2db(self.id, time_start, video_id, '', is_train, 'STARTED WATCHING AD')            
+            send2db(self.id, time_start, video_id, '', is_train, 'STARTED WATCHING AD')            
             print("{},{},{},{},{},{}".format(self.name, time_start, video_id, '', is_train, 'STARTED WATCHING AD'))
             self.watching_ad(skip, video_id)
 
@@ -238,13 +178,13 @@ class Webdriver(threading.Thread):
                 try:
                     self.driver.find_element_by_css_selector('.videoAdUiSkipButton').click()
                     time_now = str(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-                    #send2db(self.id, time_start, video_id, '', is_train, 'AD SKIPPED MID VCONTENT')
+                    send2db(self.id, time_start, video_id, '', is_train, 'AD SKIPPED MID VCONTENT')
                     print("{},{},{},{},{},{}".format(self.name, time_now, video_id, '', is_train, 'AD SKIPPED MID VCONTENT'))
                 except:
                     pass
         
         end_time = str(datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"))
-        #send2db(self.id, end_time, video_id, '', is_train, 'FINISHED WATCHING VCONTENT')
+        send2db(self.id, end_time, video_id, '', is_train, 'FINISHED WATCHING VCONTENT')
         print("{},{},{},{},{},{}".format(self.name, end_time, video_id, '', is_train, 'FINISHED WATCHING VCONTENT'))
                 
     
@@ -273,7 +213,7 @@ class Webdriver(threading.Thread):
             while(self.player_status() == -1 and self.driver.current_url.find('watch?v=')):
                 sleep(1)   
             time_now = str(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-            #send2db(self.id, time_now, video_id, '', '', 'FINISHED WATCHING AD')
+            send2db(self.id, time_now, video_id, '', '', 'FINISHED WATCHING AD')
             print("{},{},{},{},{},{}".format(self.name, time_now, video_id, '', '', 'FINISHED WATCHING AD'))
 
 
@@ -282,7 +222,7 @@ class Webdriver(threading.Thread):
             try:
                 self.driver.find_element_by_css_selector('.videoAdUiSkipButton').click()
                 time_now = str(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-                #send2db(self.id, time_now, video_id, '', '', 'AD SKIPPED')
+                send2db(self.id, time_now, video_id, '', '', 'AD SKIPPED')
                 return print("{},{},{},{},{},{}".format(self.name, time_now, video_id, '', '', 'AD SKIPPED'))
             except Exception as _:
                 sleep(1)

@@ -1,32 +1,44 @@
 # -*- coding: utf-8 -*-
-import pandas as pd
-import mysql.connector
-import sys
+from peewee import *
 
-def connect_db():
-    config = {
-        'user': 'locus@video-ads',
-        'password': 'JS~K=8V^y9S=3aG4',
-        'host': 'video-ads.mysql.database.azure.com',
-        'database': 'ad',
-    }
-    
-    try:
-        cnx = mysql.connector.connect(**config)
-        return cnx
-    except:
-        print("Could not connect to database.")
-        sys.exit()
+db = SqliteDatabase('database.db')
 
+class BaseModel(Model):
+    class Meta:
+        database = db
+
+class Persona(BaseModel):
+    name = CharField(unique=True)
+    location = CharField()
+    email = CharField()
+    password = CharField()
+    birthday = DateTimeField()
+    gender = CharField()
+    phone = CharField()
+    source_ip = CharField()
+    session_time = IntField()
+
+
+def event_defaults():
+    return {"hello": None}
+
+class Event(BaseModel):
+    persona = ForeignKeyField(Persona)
+    time = DateTimeField()
+    content_id = TextField()
+    ad_id = TextField()
+    event_type = TextField()
+    content_data = CharField(default=event_defaults)
+    ad_data = CharField(default=house_defaults)
     
-def select_personas(machine_name):
-    cnx = connect_db()
+    
+def create_db():
     try:
-        machine_id = pd.read_sql("SELECT id FROM ad.machine WHERE ad.machine.machine_name = '%s'" %(machine_name), con = cnx)
-        machine_id = int(machine_id.id)
-        personas = pd.read_sql("SELECT * FROM ad.persona WHERE ad.persona.machine_id = '%d'" %(machine_id), con = cnx)
-        cnx.close()
-        return personas
-    except:
-        print("Machine name invalid")
-        sys.exit()
+        Persona.create_table()
+    except peewee.OperationalError:
+        print ('Tabela Persona ja existe!')
+        
+    try:
+        Event.create_table()
+    except peewee.OperationalError:
+        print ('Tabela Event ja existe!')
