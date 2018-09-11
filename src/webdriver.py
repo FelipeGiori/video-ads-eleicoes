@@ -22,8 +22,8 @@ class Webdriver(threading.Thread):
         self.name = persona.name
         self.password = persona.password
         self.session_time = persona.session_time # em horas
-        self.skip_topic = 0
-        self.skip_offtopic = 0
+        self.skip_topic = 0.35
+        self.skip_offtopic = 0.35
         self.p_train = 1
         #self.display = Display(visible = True, size=(800, 600)).start()
         #self.display = Display(visible = False, size=(800, 600), backend='xvfb').start()
@@ -95,7 +95,7 @@ class Webdriver(threading.Thread):
     # Only works if the user is logged in
     def get_subscribed_playlist(self):
         self.driver.get('https://www.youtube.com/feed/subscriptions')
-        sleep(1)
+        sleep(2)
         html_source = self.driver.page_source
         
         try:
@@ -144,7 +144,7 @@ class Webdriver(threading.Thread):
         
     
     def watch(self, video_id, skip):
-        start_time = str(datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"))
+        start_time = str(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         send2db(self.id, start_time, video_id, '', 'STARTED WATCHING VCONTENT')
         
         video_url = "https://www.youtube.com/watch?v=" + video_id
@@ -155,7 +155,7 @@ class Webdriver(threading.Thread):
         # If skip is True, Skips the video-ad
         # If skip is False, watch the whole video-ad
         if(self.player_status() == -1):
-            time_start = str(datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"))
+            time_start = str(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
             send2db(self.id, time_start, video_id, '', 'STARTED WATCHING AD')            
             self.watching_ad(skip, video_id)
 
@@ -170,7 +170,7 @@ class Webdriver(threading.Thread):
                 except:
                     pass
         
-        end_time = str(datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"))
+        end_time = str(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         send2db(self.id, end_time, video_id, '', 'FINISHED WATCHING VCONTENT')                
     
     # Returns the video player current state
@@ -192,7 +192,7 @@ class Webdriver(threading.Thread):
         
     
     def watching_ad(self, skip, video_id):
-        if(skip): 
+        if(uniform(0, 1) <= skip): 
             self.skip_ad(video_id)
         else: 
             while(self.player_status() == -1 and self.driver.current_url.find('watch?v=')):

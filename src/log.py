@@ -4,7 +4,8 @@ import re
 import json
 import urllib.request
 import subprocess
-from datetime import datetime
+import pandas as pd
+from datetime import datetime, timedelta
 from time import mktime
 from database_model import Event
 
@@ -47,11 +48,11 @@ def utc2local(utc_time):
 
 
 def parse_log():
-    cmd = "grep -E ptracking ../geckodriver.log | grep content_v > ../tmp.log"
+    cmd = "grep ptracking geckodriver.log | grep content_v > tmp.log"
     subprocess.check_output(cmd, shell=True)
     
     pairs = pd.DataFrame(columns=['time', 'content_id', 'ad_id'])
-    request = open("../tmp.log", "r")
+    request = open("tmp.log", "r")
     
     # HTTPS request pair info parsing
     time_re = re.compile('(.+?)\.')
@@ -70,7 +71,21 @@ def parse_log():
     # Drop duplicate values because of many requests
     pairs = pairs.drop_duplicates()
     pairs.reset_index(inplace=True, drop=True)
-    print(pairs)
+    pairs['time'] = pd.to_datetime(pairs['time'])
+    pairs['time'] = pairs['time'].apply(utc2local)
+    
+    persona_id = []
+    for _, row in pairs.iterrows():
+        log = Event.select().where(Event.content_id == row['content_id']).where(Event.event_type == 'STARTED WATCHING VCONTENT').execute()
+        for line in log:
+            persona_id.append(line.persona)
+        
+        persona_id = list(set(persona_id))
+        for i in persona_id:
+            send2db(i, str(row['time']), row['content_id'], row['ad_id'], "AD")
+        
+            
+            
     
     # Delete files
     os.remove("../tmp.log")

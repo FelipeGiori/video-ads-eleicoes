@@ -32,7 +32,7 @@ def main():
     for bot in bots:
         bot.join()
         
-    #parse_log()
+    parse_log()
 
     print('Program finished successfully')
 
