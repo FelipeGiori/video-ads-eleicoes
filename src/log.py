@@ -16,11 +16,18 @@ def send2db(accounts_id, time, content_id, ad_id, event_type):
         else:
             ad_data = '{"hello": null}'
             content_data = '{"hello": null}'
-                
+        
+        print("{},{},{},{},{}".format(accounts_id, time, content_id, ad_id, event_type))
+        
         # Insert new event 
-        Event.insert(persona=accounts_id,time= time,content_id=content_id,
-                     ad_id= ad_id, event_type= event_type,
-                     content_data= content_data,ad_data= ad_data)
+        response = Event.insert({
+                Event.persona: accounts_id,
+                Event.time: time,
+                Event.content_id: content_id,
+                Event.ad_id: ad_id,
+                Event.event_type: event_type,
+                Event.content_data: content_data,
+                Event.ad_data: ad_data}).execute()
 
 
 def return_json(video_id):

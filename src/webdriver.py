@@ -146,7 +146,6 @@ class Webdriver(threading.Thread):
     def watch(self, video_id, skip):
         start_time = str(datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"))
         send2db(self.id, start_time, video_id, '', 'STARTED WATCHING VCONTENT')
-        print("{},{},{},{},{}".format(self.name, start_time, video_id, '', 'STARTED WATCHING VCONTENT'))
         
         video_url = "https://www.youtube.com/watch?v=" + video_id
         self.driver.get(video_url)
@@ -158,7 +157,6 @@ class Webdriver(threading.Thread):
         if(self.player_status() == -1):
             time_start = str(datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"))
             send2db(self.id, time_start, video_id, '', 'STARTED WATCHING AD')            
-            print("{},{},{},{},{}".format(self.name, time_start, video_id, '', 'STARTED WATCHING AD'))
             self.watching_ad(skip, video_id)
 
         # Check if the video streaming has finished
@@ -168,15 +166,12 @@ class Webdriver(threading.Thread):
                 try:
                     self.driver.find_element_by_css_selector('.videoAdUiSkipButton').click()
                     time_now = str(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-                    send2db(self.id, time_start, video_id, '', 'AD SKIPPED MID VCONTENT')
-                    print("{},{},{},{},{}".format(self.name, time_now, video_id, '', 'AD SKIPPED MID VCONTENT'))
+                    send2db(self.id, time_now, video_id, '', 'AD SKIPPED MID VCONTENT')
                 except:
                     pass
         
         end_time = str(datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"))
-        send2db(self.id, end_time, video_id, '', 'FINISHED WATCHING VCONTENT')
-        print("{},{},{},{},{}".format(self.name, end_time, video_id, '', 'FINISHED WATCHING VCONTENT'))
-                
+        send2db(self.id, end_time, video_id, '', 'FINISHED WATCHING VCONTENT')                
     
     # Returns the video player current state
     def player_status(self):
@@ -204,8 +199,6 @@ class Webdriver(threading.Thread):
                 sleep(1)   
             time_now = str(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
             send2db(self.id, time_now, video_id, '', 'FINISHED WATCHING AD')
-            print("{},{},{},{},{}".format(self.name, time_now, video_id, '', 'FINISHED WATCHING AD'))
-
 
     def skip_ad(self, video_id):
         while(self.player_status() == -1):
@@ -213,7 +206,7 @@ class Webdriver(threading.Thread):
                 self.driver.find_element_by_css_selector('.videoAdUiSkipButton').click()
                 time_now = str(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
                 send2db(self.id, time_now, video_id, '', 'AD SKIPPED')
-                return print("{},{},{},{},{}".format(self.name, time_now, video_id, '', 'AD SKIPPED'))
+                return 0
             except Exception as _:
                 sleep(1)
     
