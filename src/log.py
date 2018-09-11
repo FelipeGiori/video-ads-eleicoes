@@ -5,7 +5,7 @@ import json
 import urllib.request
 import subprocess
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime
 from time import mktime
 from database_model import Event
 
@@ -84,9 +84,6 @@ def parse_log():
         for i in persona_id:
             send2db(i, str(row['time']), row['content_id'], row['ad_id'], "AD")
         
-            
-            
-    
     # Delete files
-    os.remove("../tmp.log")
-    os.remove("../geckodriver.log")
+    os.remove("tmp.log")
+    os.remove("geckodriver.log")
