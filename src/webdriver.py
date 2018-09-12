@@ -19,7 +19,7 @@ class Webdriver(threading.Thread):
         
         # Persona info setup
         self.id = persona.id
-        self.name = persona.name
+        self.email = persona.email
         self.password = persona.password
         self.session_time = persona.session_time # em horas
         self.skip_topic = 0.35
@@ -60,13 +60,13 @@ class Webdriver(threading.Thread):
         if not(os.path.isdir(directory)):
             os.makedirs(directory)
 
-        directory = "personas/" + self.name
+        directory = "personas/" + self.email
         if not(os.path.isdir(directory)):
             os.makedirs(directory)
     
         
     def load_cookies(self, driver):
-        path_file = 'personas/' + self.name + '/' + self.name + '.pkl'
+        path_file = 'personas/' + self.email + '/' + self.email + '.pkl'
         if(os.path.isfile(path_file)):
             cookies = pickle.load(open(path_file, 'rb'))
             for cookie in cookies:
@@ -75,7 +75,7 @@ class Webdriver(threading.Thread):
 
     def login_youtube(self):
         self.driver.get('https://accounts.google.com/')
-        self.driver.find_element_by_id('identifierId').send_keys(self.name)
+        self.driver.find_element_by_id('identifierId').send_keys(self.email)
         self.driver.find_element_by_id('identifierNext').click()
         self.driver.window_handles[0]
         sleep(10) # Espera a transição de formulário
@@ -127,7 +127,7 @@ class Webdriver(threading.Thread):
 
         while(time() < timeout):
             if(i == len(topic_urls) or j == len(offtopic_urls)):
-                print(self.name + ' does not have more videos to watch')
+                print(self.email + ' does not have more videos to watch')
                 break
                 
             # Dada a probabilidade da persona, um número real entre 0 e 1 é gerado.
@@ -212,7 +212,7 @@ class Webdriver(threading.Thread):
     
             
     def save_cookies(self):
-        pickle.dump(self.driver.get_cookies(), open('personas/' + self.name + '/' + self.name + '.pkl', 'wb'))
+        pickle.dump(self.driver.get_cookies(), open('personas/' + self.email + '/' + self.email + '.pkl', 'wb'))
         
     
     def quit(self):
