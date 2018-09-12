@@ -26,7 +26,7 @@ def main():
     for bot in bots:
         bot.join()
         
-    parse_log()
+    parse_log(personas)
 
     print('Program finished successfully')
 

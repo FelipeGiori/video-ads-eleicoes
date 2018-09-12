@@ -47,7 +47,7 @@ def utc2local(utc_time):
     return utc_time + offset
 
 
-def parse_log():
+def parse_log(personas):
     cmd = "grep ptracking geckodriver.log | grep content_v > tmp.log"
     subprocess.check_output(cmd, shell=True)
     
@@ -81,8 +81,9 @@ def parse_log():
             persona_id.append(line.persona)
         
         persona_id = list(set(persona_id))
-        for i in persona_id:
-            send2db(i, str(row['time']), row['content_id'], row['ad_id'], "AD")
+        for persona in personas:
+            if(persona.id in persona_id):
+                send2db(persona.id, str(row['time']), row['content_id'], row['ad_id'], "AD")
         
     # Delete files
     os.remove("tmp.log")
