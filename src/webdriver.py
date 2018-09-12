@@ -144,6 +144,9 @@ class Webdriver(threading.Thread):
         
     
     def watch(self, video_id, skip):
+        WATCH_TIME_LIMIT = 10*60 # 10 minutos
+        timeout = time() + WATCH_TIME_LIMIT
+        
         start_time = str(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         send2db(self.id, start_time, video_id, '', 'STARTED WATCHING VCONTENT')
         
@@ -162,7 +165,11 @@ class Webdriver(threading.Thread):
         # Check if the video streaming has finished
         if(self.player_status() != 0 and self.player_status() != 5): 
             while(self.player_status() != 0 and self.driver.current_url.find('watch?v=') != -1):
-                sleep(1)
+                if(timeout < time()):
+                    break
+                
+                sleep(2)
+                
                 try:
                     self.driver.find_element_by_css_selector('.videoAdUiSkipButton').click()
                     time_now = str(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
