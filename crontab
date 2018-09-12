@@ -1,0 +1,4 @@
+# Scheduled times
+0 09 * * * python3 /home/run.sh >> /home/bot.log
+0 15 * * * python3 /home/run.sh >> /home/bot.log
+0 19 * * * python3 /home/run.sh >> /home/bot.log
