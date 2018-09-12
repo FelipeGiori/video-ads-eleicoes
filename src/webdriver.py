@@ -25,8 +25,7 @@ class Webdriver(threading.Thread):
         self.skip_topic = 0.35
         self.skip_offtopic = 0.35
         self.p_train = 1
-        #self.display = Display(visible = True, size=(800, 600)).start()
-        #self.display = Display(visible = False, size=(800, 600), backend='xvfb').start()
+        self.display = Display(visible = False, size=(800, 600), backend='xvfb').start()
         self.driver = self.setup_driver()
     
     def run(self):
@@ -160,7 +159,7 @@ class Webdriver(threading.Thread):
         if(self.player_status() == -1):
             time_start = str(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
             send2db(self.id, time_start, video_id, '', 'STARTED WATCHING AD')            
-            self.watching_ad(skip, video_id)
+            self.watching_ad(skip, video_id, timeout)
 
         # Check if the video streaming has finished
         if(self.player_status() != 0 and self.player_status() != 5): 
@@ -198,11 +197,13 @@ class Webdriver(threading.Thread):
         return status
         
     
-    def watching_ad(self, skip, video_id):
+    def watching_ad(self, skip, video_id, timeout):
         if(uniform(0, 1) <= skip): 
             self.skip_ad(video_id)
         else: 
             while(self.player_status() == -1 and self.driver.current_url.find('watch?v=')):
+                if(timeout < time()):
+                    break
                 sleep(1)   
             time_now = str(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
             send2db(self.id, time_now, video_id, '', 'FINISHED WATCHING AD')

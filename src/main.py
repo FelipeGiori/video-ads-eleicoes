@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from webdriver import Webdriver
 from requests import get
-from database_model import create_db, Persona
+from database_model import Persona
 from log import parse_log
 
 
@@ -18,11 +18,9 @@ def main():
         print(persona.name)
 
     for persona in personas:
-        print("Creating bot")
         bot = Webdriver(persona)
         bot.start()
         bots.append(bot)
-        print("Created bot")
 
     # Wait all the threads to finish
     for bot in bots:
