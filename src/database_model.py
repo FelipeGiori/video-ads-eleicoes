@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from peewee import *
 
-db = SqliteDatabase('database/database.db')
+db = SqliteDatabase('/database/database.db')
 
 class BaseModel(Model):
     class Meta:
