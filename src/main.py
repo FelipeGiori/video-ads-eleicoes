@@ -1,17 +1,18 @@
 # -*- coding: utf-8 -*-
 from webdriver import Webdriver
-from requests import get
 from database_model import Persona
 from log import parse_log
+import subprocess
 
-
-def get_public_ip():
-    return get('https://ipapi.co/ip/').text
+def get_docker_id():
+    bashCommand = """head -1 /proc/self/cgroup|cut -d/ -f3"""
+    output = subprocess.check_output(['bash','-c', bashCommand])
+    return output
 
 def main():
-    ip = get_public_ip()
+    docker_id = get_docker_id()
     
-    personas = Persona.select().where(Persona.source_ip == ip)
+    personas = Persona.select().where(Persona.source_ip == docker_id)
     bots = []
     
     for persona in personas:

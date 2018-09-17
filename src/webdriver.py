@@ -152,7 +152,11 @@ class Webdriver(threading.Thread):
         video_url = "https://www.youtube.com/watch?v=" + video_id
         self.driver.get(video_url)
         
-        while(self.player_status() is None): sleep(1) # Waiting for the video player...
+        while(self.player_status() is None):
+            if(timeout < time()):
+                break # Waiting for the video player...
+            else:
+                sleep(2)
         
         # If skip is True, Skips the video-ad
         # If skip is False, watch the whole video-ad
@@ -166,8 +170,8 @@ class Webdriver(threading.Thread):
             while(self.player_status() != 0 and self.driver.current_url.find('watch?v=') != -1):
                 if(timeout < time()):
                     break
-                
-                sleep(2)
+                else:
+                    sleep(2)
                 
                 try:
                     self.driver.find_element_by_css_selector('.videoAdUiSkipButton').click()
@@ -199,24 +203,28 @@ class Webdriver(threading.Thread):
     
     def watching_ad(self, skip, video_id, timeout):
         if(uniform(0, 1) <= skip): 
-            self.skip_ad(video_id)
+            self.skip_ad(video_id, timeout)
         else: 
             while(self.player_status() == -1 and self.driver.current_url.find('watch?v=')):
                 if(timeout < time()):
                     break
-                sleep(1)   
+                else:
+                    sleep(1)
             time_now = str(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
             send2db(self.id, time_now, video_id, '', 'FINISHED WATCHING AD')
 
-    def skip_ad(self, video_id):
+    def skip_ad(self, video_id, timeout):
         while(self.player_status() == -1):
-            try:
-                self.driver.find_element_by_css_selector('.videoAdUiSkipButton').click()
-                time_now = str(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-                send2db(self.id, time_now, video_id, '', 'AD SKIPPED')
-                return 0
-            except Exception as _:
-                sleep(1)
+            if(timeout < time()):
+                break
+            else:
+                try:
+                    self.driver.find_element_by_css_selector('.videoAdUiSkipButton').click()
+                    time_now = str(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                    send2db(self.id, time_now, video_id, '', 'AD SKIPPED')
+                    return 0
+                except Exception as _:
+                    sleep(1)
     
             
     def save_cookies(self):
