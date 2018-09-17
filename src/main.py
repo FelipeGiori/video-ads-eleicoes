@@ -5,12 +5,13 @@ from log import parse_log
 import subprocess
 
 def get_docker_id():
-    bashCommand = """head -1 /proc/self/cgroup|cut -d/ -f3"""
-    output = subprocess.check_output(['bash','-c', bashCommand])
+    bashCommand = "head -1 /proc/self/cgroup|cut -d/ -f3"
+    output = subprocess.check_output(bashCommand, shell=True)
     return output
 
 def main():
     docker_id = get_docker_id()
+    docker_id = docker_id.decode()[:-1]
     
     personas = Persona.select().where(Persona.source_ip == docker_id)
     bots = []
