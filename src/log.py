@@ -74,8 +74,8 @@ def parse_log(personas):
     pairs['time'] = pd.to_datetime(pairs['time'])
     pairs['time'] = pairs['time'].apply(utc2local)
     
-    persona_id = []
     for _, row in pairs.iterrows():
+        persona_id = []
         log = Event.select().where(Event.content_id == row['content_id']).where(Event.event_type == 'STARTED WATCHING VCONTENT').execute()
         for line in log:
             persona_id.append(line.persona)
