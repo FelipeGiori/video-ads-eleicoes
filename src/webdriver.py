@@ -171,7 +171,7 @@ class Webdriver(threading.Thread):
                 if(timeout < time()):
                     break
                 else:
-                    sleep(2)
+                    sleep(3)
                 
                 try:
                     self.driver.find_element_by_css_selector('.videoAdUiSkipButton').click()
