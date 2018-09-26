@@ -209,7 +209,7 @@ class Webdriver(threading.Thread):
                 if(timeout < time()):
                     break
                 else:
-                    sleep(1)
+                    sleep(2)
             time_now = str(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
             send2db(self.id, time_now, video_id, '', 'FINISHED WATCHING AD')
 
@@ -224,7 +224,7 @@ class Webdriver(threading.Thread):
                     send2db(self.id, time_now, video_id, '', 'AD SKIPPED')
                     return 0
                 except Exception as _:
-                    sleep(1)
+                    sleep(2)
     
             
     def save_cookies(self):
